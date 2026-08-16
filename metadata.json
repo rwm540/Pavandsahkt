@@ -1,0 +1,6 @@
+{
+  "name": "پلتفرم آکان | اکوسیستم تخصصی ملک و ساختمان",
+  "description": "پلتفرم تخصصی اعتبارسنجی ملک، اتاق معامله محرمانه، بازار مصالح، تهاتر، مشارکت در ساخت و دیتاسنتر قیمت مسکن",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
