@@ -43,6 +43,7 @@ import { RoleDashboardPage } from './components/pages/RoleDashboardPage';
 import { AdminPanelPage } from './components/pages/AdminPanelPage';
 import { NotificationsPage } from './components/pages/NotificationsPage';
 import { ProfilePage } from './components/pages/ProfilePage';
+import { AudioAnalysisPage } from './components/pages/AudioAnalysisPage';
 
 export default function App() {
   // Primary States
@@ -438,6 +439,10 @@ export default function App() {
             onRoleChange={handleRoleChange}
             onNavigateTab={(tab) => setActiveTab(tab)}
           />
+        )}
+
+        {activeTab === 'audio_analysis' && (
+          <AudioAnalysisPage />
         )}
 
       </main>

@@ -14,7 +14,8 @@ import {
   Radio, 
   Bell, 
   Compass, 
-  Lock 
+  Lock,
+  Headphones
 } from 'lucide-react';
 import { UserRole } from '../../types';
 import { toPersianDigits } from '../../utils/formatters';
@@ -161,6 +162,18 @@ export const MoreMenuSheet: React.FC<MoreMenuSheetProps> = ({
       border: 'border-amber-400/70',
       badge: 'رمزنگاری',
       badgeBg: 'bg-amber-400 text-slate-950 font-black',
+    },
+    {
+      id: 'audio_analysis',
+      category: 'tools',
+      title: 'آنالیز صوتی هوشمند',
+      subtitle: 'پیاده‌سازی فایل صوتی',
+      icon: Headphones,
+      gradient: 'from-amber-600 via-orange-600 to-yellow-600',
+      glow: 'shadow-[0_10px_25px_rgba(245,158,11,0.5)]',
+      border: 'border-amber-400/80',
+      badge: 'هوش مصنوعی',
+      badgeBg: 'bg-amber-400 text-slate-950 font-black animate-pulse',
     },
     {
       id: 'notifications',

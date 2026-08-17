@@ -17,36 +17,51 @@ interface ChartPoint {
 
 export const PriceDataCenterPage: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState<PriceIndex>(mockPriceIndices[0]);
-  const [chartType, setChartType] = useState<'line' | 'candlestick'>('line');
+  const [chartType, setChartType] = useState<'line' | 'candlestick'>('candlestick');
   
   // Live real-time chart data state
   const [chartData, setChartData] = useState<ChartPoint[]>([]);
   const [lastTickPrice, setLastTickPrice] = useState<number>(0);
   const [tickDirection, setTickDirection] = useState<'up' | 'down' | 'same'>('same');
 
-  // Initialize and update chart data when selectedIndex changes
+  // Initialize and update chart data when selectedIndex changes (Generate 50+ dense TradingView candles)
   useEffect(() => {
-    const initial = selectedIndex.historicalChart.map((item, idx, arr) => {
-      const base = item.price;
-      const open = idx === 0 ? base * 0.98 : arr[idx - 1].price;
-      const close = base;
-      const high = Math.max(open, close) * 1.012;
-      const low = Math.min(open, close) * 0.988;
-      return {
-        month: item.month,
-        price: base,
+    const basePrices = selectedIndex.historicalChart;
+    const expanded: ChartPoint[] = [];
+    let curPrice = basePrices[0].price * 0.85;
+
+    for (let i = 0; i < 52; i++) {
+      const wave = Math.sin(i * 0.35) * 0.025 + Math.cos(i * 0.15) * 0.015;
+      const trend = i * 0.003;
+      const noise = (Math.sin(i * 12.5) * 0.012);
+      
+      const open = curPrice;
+      const change = curPrice * (wave + trend + noise);
+      const close = Math.round(open + change);
+      const high = Math.round(Math.max(open, close) + (Math.abs(change) * 0.6) + (curPrice * 0.004));
+      const low = Math.round(Math.min(open, close) - (Math.abs(change) * 0.6) - (curPrice * 0.004));
+      
+      const isGreen = close >= open;
+      const weekLabel = `کندل ${i + 1}`;
+
+      expanded.push({
+        month: weekLabel,
+        price: close,
         open: Math.round(open),
-        high: Math.round(high),
-        low: Math.round(low),
-        close: Math.round(close),
-        isGreen: close >= open,
-      };
-    });
-    setChartData(initial);
-    setLastTickPrice(initial[initial.length - 1].price);
+        high,
+        low,
+        close,
+        isGreen,
+      });
+
+      curPrice = close;
+    }
+
+    setChartData(expanded);
+    setLastTickPrice(expanded[expanded.length - 1].price);
   }, [selectedIndex]);
 
-  // Live Real-Time Ticking Effect (every 3 seconds)
+  // Live Real-Time Ticking Effect (every 2.5 seconds)
   useEffect(() => {
     const interval = setInterval(() => {
       setChartData((prev) => {
@@ -54,8 +69,7 @@ export const PriceDataCenterPage: React.FC = () => {
         const lastIdx = prev.length - 1;
         const currentLast = prev[lastIdx];
         
-        // Random fluctuation between -0.25% and +0.3%
-        const pct = (Math.random() * 0.55 - 0.23) / 100;
+        const pct = (Math.random() * 0.4 - 0.18) / 100;
         const newPrice = Math.round(currentLast.price * (1 + pct));
         
         const direction = newPrice > currentLast.price ? 'up' : newPrice < currentLast.price ? 'down' : 'same';
@@ -63,17 +77,18 @@ export const PriceDataCenterPage: React.FC = () => {
         setLastTickPrice(newPrice);
 
         const updated = [...prev];
+        const openPrice = currentLast.open || newPrice;
         updated[lastIdx] = {
           ...currentLast,
           price: newPrice,
           close: newPrice,
-          high: Math.max(currentLast.high || newPrice, newPrice * 1.004),
-          low: Math.min(currentLast.low || newPrice, newPrice * 0.996),
-          isGreen: newPrice >= (currentLast.open || newPrice),
+          high: Math.max(currentLast.high || newPrice, newPrice * 1.003),
+          low: Math.min(currentLast.low || newPrice, newPrice * 0.997),
+          isGreen: newPrice >= openPrice,
         };
         return updated;
       });
-    }, 3000);
+    }, 2500);
 
     return () => clearInterval(interval);
   }, []);
@@ -149,20 +164,22 @@ export const PriceDataCenterPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Main Chart 3D Glass Card */}
-      <div className="glass-card p-5 sm:p-6 rounded-3xl border border-white/15 space-y-4 shadow-glass-3d">
+      {/* Main Chart 3D Glass Card - TradingView Style Dark Terminal */}
+      <div className="bg-slate-950 p-5 sm:p-6 rounded-3xl border border-white/20 space-y-4 shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative overflow-hidden">
+        
+        {/* Terminal Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3.5">
           <div>
             <h2 className="font-extrabold text-base text-white flex items-center gap-2">
               <Activity className="w-5 h-5 text-emerald-400 animate-pulse" />
-              <span>روند ۱۲ ماهه قیمت هر متر (تومان) - {selectedIndex.city} ({selectedIndex.district})</span>
+              <span>ترمینال زنده کندل‌استیک قیمت - {selectedIndex.city} ({selectedIndex.district})</span>
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">{selectedIndex.propertyType} • آپدیت زنده آنی</p>
+            <p className="text-xs text-slate-400 mt-0.5">{selectedIndex.propertyType} • تایم‌فریم هفتگی (TradingView Terminal)</p>
           </div>
 
           <div className="flex items-center gap-2.5">
             {/* Chart Type Switcher: Line vs Candlestick */}
-            <div className="bg-slate-950/80 p-1 rounded-xl border border-white/15 flex items-center gap-1">
+            <div className="bg-slate-900 p-1 rounded-xl border border-white/15 flex items-center gap-1">
               <button
                 onClick={() => setChartType('line')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -198,14 +215,14 @@ export const PriceDataCenterPage: React.FC = () => {
         </div>
 
         {/* Chart View Area */}
-        <div className="h-72 w-full pt-2">
+        <div className="h-80 w-full pt-3 relative">
           {chartType === 'line' ? (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-                <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey="month" stroke="#64748b" fontSize={10} tickLine={false} interval={2} />
                 <YAxis
-                  stroke="#94a3b8"
+                  stroke="#64748b"
                   fontSize={10}
                   domain={['auto', 'auto']}
                   tickFormatter={(val) => `${(val / 1000000).toFixed(0)} م`}
@@ -220,76 +237,122 @@ export const PriceDataCenterPage: React.FC = () => {
                   type="monotone"
                   dataKey="price"
                   stroke="#34d399"
-                  strokeWidth={3.5}
-                  dot={{ r: 5, fill: '#34d399', strokeWidth: 2, stroke: '#0f172a' }}
-                  activeDot={{ r: 8, fill: '#fbbf24', stroke: '#0f172a' }}
+                  strokeWidth={3}
+                  dot={{ r: 3, fill: '#34d399', strokeWidth: 1, stroke: '#0f172a' }}
+                  activeDot={{ r: 7, fill: '#fbbf24', stroke: '#0f172a' }}
                   isAnimationActive={true}
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            /* Custom Interactive Candlestick Chart View */
-            <div className="w-full h-full flex flex-col justify-between">
-              <div className="flex items-center justify-between text-[11px] text-slate-400 px-2 pb-1 border-b border-white/10">
-                <span>ماه / دوره</span>
-                <span className="flex items-center gap-4">
-                  <span className="text-emerald-400 font-bold">■ صعودی (Bullish)</span>
-                  <span className="text-rose-400 font-bold">■ نزولی (Bearish)</span>
-                  <span className="text-amber-400 font-bold">● آخرین قیمت لحظه‌ای</span>
-                </span>
-              </div>
+            /* Professional TradingView Style Candlestick Terminal View with Price Scale Sidebar */
+            <div className="w-full h-full flex items-stretch relative">
+              
+              {/* Main Chart Area */}
+              <div className="flex-1 flex flex-col justify-between overflow-x-auto no-scrollbar relative">
+                
+                {/* Grid Background Lines */}
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-25">
+                  <div className="border-b border-dashed border-slate-700 w-full" />
+                  <div className="border-b border-dashed border-slate-700 w-full" />
+                  <div className="border-b border-dashed border-slate-700 w-full" />
+                  <div className="border-b border-dashed border-slate-700 w-full" />
+                </div>
 
-              <div className="grid grid-cols-5 gap-3 h-52 items-end pt-4 px-2">
-                {chartData.map((item, index) => {
-                  const isGreen = item.isGreen;
-                  const colorClass = isGreen ? 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.5)]';
-                  const wickColor = isGreen ? 'bg-emerald-400' : 'bg-rose-400';
-                  
-                  // Calculate relative height percentage for visual representation
-                  const minP = Math.min(...chartData.map(d => d.low || d.price)) * 0.95;
-                  const maxP = Math.max(...chartData.map(d => d.high || d.price)) * 1.02;
-                  const range = maxP - minP || 1;
-                  
-                  const bodyTop = Math.max(item.open || item.price, item.close || item.price);
-                  const bodyBottom = Math.min(item.open || item.price, item.close || item.price);
-                  
-                  const heightPercent = Math.max(15, Math.min(85, ((bodyTop - bodyBottom) / range) * 100));
-                  const bottomPercent = Math.max(5, Math.min(80, ((bodyBottom - minP) / range) * 100));
+                {/* Candles Row with 15% vertical padding so they never glue to the bottom */}
+                <div className="flex items-end justify-between gap-1.5 sm:gap-2.5 h-64 pt-8 pb-4 px-3 relative z-10 min-w-[700px]">
+                  {chartData.map((item, index) => {
+                    const isGreen = item.isGreen;
+                    const bodyColor = isGreen ? 'bg-[#22c55e] shadow-[0_0_12px_rgba(34,197,94,0.45)]' : 'bg-[#ef4444] shadow-[0_0_12px_rgba(239,68,68,0.45)]';
+                    const wickColor = isGreen ? 'bg-[#22c55e]' : 'bg-[#ef4444]';
+                    
+                    // Compute price range across all items with generous padding to prevent bottom sticking
+                    const allPrices = chartData.flatMap(d => [d.high || d.price, d.low || d.price]);
+                    const rawMin = Math.min(...allPrices);
+                    const rawMax = Math.max(...allPrices);
+                    const padding = (rawMax - rawMin) * 0.15 || 1000000;
+                    const minP = rawMin - padding;
+                    const maxP = rawMax + padding;
+                    const range = maxP - minP || 1;
+                    
+                    const highVal = item.high || item.price;
+                    const lowVal = item.low || item.price;
+                    const openVal = item.open || item.price;
+                    const closeVal = item.close || item.price;
 
-                  return (
-                    <div key={index} className="flex flex-col items-center h-full justify-end group relative">
-                      
-                      {/* Tooltip on Hover */}
-                      <div className="absolute -top-16 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950/95 border border-white/20 px-3 py-1.5 rounded-xl shadow-2xl z-30 pointer-events-none text-right whitespace-nowrap">
-                        <p className="text-[10px] font-bold text-amber-300">{item.month} ۱۴۰۳</p>
-                        <p className="text-[10px] text-white">بسته: {formatTomanShort(item.close || item.price)}</p>
-                        <p className="text-[9px] text-slate-400">بالا: {formatTomanShort(item.high || item.price)} | پایین: {formatTomanShort(item.low || item.price)}</p>
-                      </div>
+                    const bodyTop = Math.max(openVal, closeVal);
+                    const bodyBottom = Math.min(openVal, closeVal);
 
-                      {/* Wick (High-Low Line) */}
-                      <div className={`w-0.5 h-full absolute ${wickColor} opacity-70`} />
+                    // Calculate CSS percentages within chart height
+                    const highPercent = ((highVal - minP) / range) * 100;
+                    const lowPercent = ((lowVal - minP) / range) * 100;
+                    const bodyTopPercent = ((bodyTop - minP) / range) * 100;
+                    const bodyBottomPercent = ((bodyBottom - minP) / range) * 100;
+                    
+                    const heightPercent = Math.max(6, bodyTopPercent - bodyBottomPercent);
 
-                      {/* Candlestick Body (Open-Close) */}
-                      <div 
-                        style={{ height: `${heightPercent}%`, bottom: `${bottomPercent}%` }}
-                        className={`w-10 sm:w-14 rounded-lg absolute ${colorClass} border border-white/30 flex flex-col items-center justify-center transition-all group-hover:scale-105`}
-                      >
-                        <span className="text-[9px] sm:text-[10px] font-black text-slate-950 font-mono drop-shadow-sm">
-                          {(selectedIndex.avgPricePerMeter / 1000000).toFixed(0)}م
+                    return (
+                      <div key={index} className="flex flex-col items-center h-full justify-end group relative flex-1">
+                        
+                        {/* Detailed TradingView Tooltip */}
+                        <div className="absolute -top-24 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 border border-white/25 px-3 py-2 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.9)] z-40 pointer-events-none text-right whitespace-nowrap">
+                          <p className="text-[11px] font-black text-amber-300 mb-1">{item.month}</p>
+                          <div className="space-y-0.5 text-[10px] text-slate-300 font-mono">
+                            <p>بالا (High): <span className="text-emerald-400">{formatTomanShort(highVal)}</span></p>
+                            <p>باز (Open): <span className="text-white">{formatTomanShort(openVal)}</span></p>
+                            <p>بسته (Close): <span className={isGreen ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>{formatTomanShort(closeVal)}</span></p>
+                            <p>پایین (Low): <span className="text-rose-400">{formatTomanShort(lowVal)}</span></p>
+                          </div>
+                        </div>
+
+                        {/* Wick (High-Low thin vertical line) */}
+                        <div 
+                          style={{ 
+                            bottom: `${Math.max(2, Math.min(92, lowPercent))}%`, 
+                            height: `${Math.max(10, highPercent - lowPercent)}%` 
+                          }}
+                          className={`w-0.5 absolute ${wickColor} opacity-90`}
+                        />
+
+                        {/* Candlestick Body (Open-Close solid box) */}
+                        <div 
+                          style={{ 
+                            bottom: `${Math.max(4, Math.min(94, bodyBottomPercent))}%`, 
+                            height: `${heightPercent}%` 
+                          }}
+                          className={`w-3 sm:w-5 rounded-[3px] absolute ${bodyColor} border border-white/20 transition-transform group-hover:scale-125`}
+                        />
+
+                        {/* Month Label at bottom */}
+                        <span className="text-[8px] font-mono text-slate-400 mt-2 z-20 whitespace-nowrap transform -rotate-45 sm:rotate-0">
+                          {item.month}
                         </span>
                       </div>
-
-                      {/* Month Label */}
-                      <span className="text-[11px] font-bold text-slate-300 mt-2 z-10 bg-slate-900/80 px-2 py-0.5 rounded-md border border-white/10">
-                        {item.month}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="text-center pt-2 text-[10px] text-emerald-400 font-mono">
-                ⚡ ریل‌تایم: قیمت‌ها به صورت زنده از بازار مسکن آپدیت می‌شوند.
+              {/* Financial Market Y-Axis Price Scale Sidebar on the Right */}
+              <div className="w-24 sm:w-28 border-r border-white/10 flex flex-col justify-between py-2 px-2 text-[9px] font-mono text-slate-400 bg-slate-900/55 select-none shrink-0">
+                {(() => {
+                  const allPrices = chartData.flatMap(d => [d.high || d.price, d.low || d.price]);
+                  const rawMin = Math.min(...allPrices);
+                  const rawMax = Math.max(...allPrices);
+                  const step = (rawMax - rawMin) / 4;
+                  return [
+                    { label: formatTomanShort(rawMax + step), color: 'text-emerald-400' },
+                    { label: formatTomanShort(rawMax), color: 'text-white font-bold' },
+                    { label: formatTomanShort(rawMin + step * 2), color: 'text-slate-300' },
+                    { label: formatTomanShort(rawMin + step), color: 'text-slate-300' },
+                    { label: formatTomanShort(rawMin), color: 'text-rose-400 font-bold' }
+                  ].map((p, idx) => (
+                    <div key={idx} className="flex items-center justify-between">
+                      <span className={p.color}>{p.label}</span>
+                      <span className="text-slate-600">--</span>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           )}
