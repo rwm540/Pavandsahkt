@@ -1,8 +1,10 @@
 export type UserRole = 
   | 'buyer'              // خریدار / سرمایه‌گذار
   | 'seller'             // مالکان و فروشندگان
+  | 'tenant'             // مستأجران و متقاضیان رهن و اجاره
   | 'agent'              // مشاوران املاک امین
   | 'builder'            // سازندگان و مجریان
+  | 'mine_owner'         // معدن‌داران و تأمین‌کنندگان سنگ و کانی خام
   | 'factory'            // کارخانجات و تولیدکنندگان
   | 'materials_seller'   // فروشندگان محلی مصالح
   | 'craftsman'          // استادکاران و پیمانکاران
@@ -26,6 +28,7 @@ export interface User {
   location: string;
   bio?: string;
   companyName?: string;
+  mineName?: string; // برای معدن‌داران
 }
 
 export interface Property {
@@ -36,7 +39,7 @@ export interface Property {
   propertyType: PropertyType;
   city: string;
   district: string;
-  price: number; // in Tomans
+  price: number; // in Tomans (for sale) or deposit/rahn (for rent)
   pricePerMeter: number;
   area: number; // sq meters
   rooms: number;
@@ -55,6 +58,15 @@ export interface Property {
   isRateCutter?: boolean; // نرخ‌شکن
   discountPercent?: number;
   discountReason?: string;
+  // ویژگی‌های اختصاصی رهن و اجاره
+  rentalDetails?: {
+    depositPrice: number; // ودیعه / رهن به تومان
+    monthlyRent: number; // اجاره ماهانه به تومان
+    isConvertible: boolean; // قابلیت تبدیل رهن و اجاره
+    conversionRateFormula?: string; // فرمول تبدیل (مثلاً هر ۱۰۰ میلیون معادل ۳ میلیون تومان)
+    evictionStatus: 'ready' | 'occupied_until_next_month' | 'immediate'; // وضعیت تخلیه
+    suitableFor: 'family_or_single' | 'family_only' | 'office'; // مناسب برای
+  };
   barterDetails?: {
     acceptsProperty: boolean;
     acceptsMaterials: boolean;
@@ -74,6 +86,11 @@ export interface Property {
 }
 
 export type MaterialCategory = 
+  | 'سنگ کوپ و بلوک معدنی'
+  | 'سنگ و کانی معدنی'
+  | 'پوکه و شن و ماسه معدنی'
+  | 'پوکه و سیلیس'
+  | 'سیلیس و مواد خام نسوز'
   | 'سیمان' 
   | 'گچ' 
   | 'کاشی و سرامیک' 
@@ -89,9 +106,9 @@ export interface MaterialProduct {
   code: string;
   title: string;
   category: MaterialCategory;
-  supplierType: 'factory' | 'local'; // کارخانه/عمده یا محلی/خرد
+  supplierType: 'factory' | 'local' | 'mine'; // کارخانه/عمده یا محلی/خرد یا معدن‌دار
   price: number; // in Tomans
-  unit: string; // e.g. 'تن', 'کیسه', 'مترمربع', 'شاخه'
+  unit: string; // e.g. 'تن', 'کیسه', 'مترمربع', 'شاخه', 'کوپ'
   minOrder: number;
   location: string;
   distanceKm: number;
@@ -103,6 +120,40 @@ export interface MaterialProduct {
   description: string;
   rating: number;
   deliveryTimeDays: number;
+  mineDetails?: {
+    quarryName?: string; // نام معدن و سینه کار
+    mineName?: string; // نام معدن
+    monthlyExtractionTons?: number; // تناژ استخراج ماهانه
+    monthlyCapacityTons?: number; // ظرفیت استخراج ماهیانه
+    assayPurityPercent?: number; // درصد خلوص یا عیار
+    grade?: string; // عیار / گرید سنگ
+    licenseNumber?: string; // شماره پروانه بهره‌برداری
+    isDirectFromQuarry?: boolean; // تحویل مستقیم از سینه کار معدن
+  };
+}
+
+export interface LiveActivityEvent {
+  id: string;
+  type: 'deal' | 'mine' | 'price' | 'verification' | 'rent' | 'barter';
+  title: string;
+  description: string;
+  timestamp: string;
+  actor: string;
+  badge: string;
+  badgeColor: 'emerald' | 'amber' | 'blue' | 'rose' | 'purple';
+  amount?: number;
+  unit?: string;
+  changePercent?: number;
+}
+
+export interface LiveTickerItem {
+  id: string;
+  symbol: string;
+  name: string;
+  price: number;
+  unit: string;
+  changePercent: number; // positive or negative
+  category: 'metal' | 'cement' | 'stone' | 'real_estate' | 'sand';
 }
 
 export interface Craftsman {

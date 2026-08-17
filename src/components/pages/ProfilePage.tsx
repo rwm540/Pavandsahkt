@@ -25,8 +25,10 @@ interface ProfilePageProps {
 const roleTitles: Record<UserRole, string> = {
   buyer: 'خریدار / سرمایه‌گذار',
   seller: 'مالک / فروشنده',
+  tenant: 'مستأجر / رهن و اجاره',
   agent: 'مشاور املاک امین',
   builder: 'سازنده / مجری',
+  mine_owner: 'معدن‌دار / تأمین سنگ و کانی',
   factory: 'کارخانه مصالح',
   materials_seller: 'فروشنده محلی',
   craftsman: 'استادکار / پیمانکار',

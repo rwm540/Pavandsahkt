@@ -36,6 +36,9 @@ export const DealRoomPage: React.FC<DealRoomPageProps> = ({
   const [selectedRoomId, setSelectedRoomId] = useState<string>(dealRooms[0]?.id || '');
   const [newNote, setNewNote] = useState('');
   const [notes, setNotes] = useState<string[]>(dealRooms[0]?.confidentialNotes || []);
+  const [showSentSuccess, setShowSentSuccess] = useState<boolean>(false);
+  const [bidAmount, setBidAmount] = useState<string>('');
+  const [bidSuccessMsg, setBidSuccessMsg] = useState<string | null>(null);
 
   const activeRoom = dealRooms.find((r) => r.id === selectedRoomId) || dealRooms[0];
 
@@ -56,6 +59,22 @@ export const DealRoomPage: React.FC<DealRoomPageProps> = ({
     if (!newNote.trim()) return;
     setNotes([`امروز - ${new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}: ${newNote}`, ...notes]);
     setNewNote('');
+  };
+
+  const handleSendToAgentClick = () => {
+    if (onSendToAgent) onSendToAgent(activeRoom.id);
+    setShowSentSuccess(true);
+    setTimeout(() => setShowSentSuccess(false), 5000);
+  };
+
+  const handleSendInstantBid = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bidAmount.trim()) return;
+    const bidMsg = `پیشنهاد مالی جدید (${bidAmount} تومان) به صورت رمزنگاری‌شده در جریان زنده اتاق معامله ثبت و به اطلاع طرفین رسید.`;
+    setNotes([`لحظاتی پیش: ${bidMsg}`, ...notes]);
+    setBidSuccessMsg(`پیشنهاد رسمی ${bidAmount} با موفقیت ثبت شد.`);
+    setBidAmount('');
+    setTimeout(() => setBidSuccessMsg(null), 4000);
   };
 
   return (
@@ -217,12 +236,51 @@ export const DealRoomPage: React.FC<DealRoomPageProps> = ({
             </div>
           </div>
 
-          {/* Confidential Notes Log with Terminal Glass Look */}
+          {/* Confidential Notes & Live Negotiations Log */}
           <div className="glass-card p-5 sm:p-6 rounded-3xl border border-white/15 space-y-4 shadow-glass-3d">
-            <h3 className="font-extrabold text-sm flex items-center gap-2 text-white border-b border-white/10 pb-3">
-              <Lock className="w-4 h-4 text-amber-400" />
-              <span>یادداشت‌ها و توافقات محرمانه طرفین</span>
-            </h3>
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="font-extrabold text-sm flex items-center gap-2 text-white">
+                <Lock className="w-4 h-4 text-amber-400" />
+                <span>مذاکرات و توافقات زنده طرفین (Live Negotiation)</span>
+              </h3>
+              <span className="text-[10px] glass-emerald text-emerald-300 px-2.5 py-0.5 rounded-full border border-emerald-400/40 flex items-center gap-1 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                جریان زنده فعال
+              </span>
+            </div>
+
+            {/* Instant Bid Submission Form */}
+            <form onSubmit={handleSendInstantBid} className="p-3.5 rounded-2xl glass-panel-dark border border-amber-400/30 space-y-2">
+              <div className="flex items-center justify-between text-xs text-amber-300 font-bold">
+                <span className="flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  ارسال پیشنهاد قیمت یا شرط توافق جدید:
+                </span>
+                <span className="text-[10px] text-slate-400">ثبت آنی در کانال امن</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={bidAmount}
+                  onChange={(e) => setBidAmount(e.target.value)}
+                  placeholder="مثال: ۴۹.۵ میلیارد تومان یا شروط پرداخت سه مرحله‌ای..."
+                  className="flex-1 bg-slate-950/90 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+                />
+                <button
+                  type="submit"
+                  className="btn-3d-amber text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1 cursor-pointer"
+                >
+                  <Send className="w-3.5 h-3.5" />
+                  <span>ارسال زنده</span>
+                </button>
+              </div>
+              {bidSuccessMsg && (
+                <div className="glass-emerald border border-emerald-400/50 p-2 rounded-xl text-[11px] text-emerald-200 font-bold flex items-center gap-1.5 animate-in fade-in">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{bidSuccessMsg}</span>
+                </div>
+              )}
+            </form>
 
             <div className="space-y-2.5 max-h-56 overflow-y-auto no-scrollbar">
               {notes.map((note, idx) => (
@@ -238,12 +296,12 @@ export const DealRoomPage: React.FC<DealRoomPageProps> = ({
                 type="text"
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
-                placeholder="ثبت توافق یا یادداشت جدید (فقط طرفین و کارشناس مشاهده می‌کنند)..."
+                placeholder="ثبت یادداشت محرمانه تکمیلی..."
                 className="flex-1 bg-slate-950/80 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 backdrop-blur-md"
               />
               <button
                 type="submit"
-                className="btn-3d-amber text-slate-950 font-black px-4.5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
+                className="glass-card hover:bg-white/20 text-white font-bold px-4.5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 border border-white/20 cursor-pointer"
               >
                 <Send className="w-3.5 h-3.5" />
                 <span>ثبت</span>
@@ -315,15 +373,19 @@ export const DealRoomPage: React.FC<DealRoomPageProps> = ({
 
             {/* Action Referral Button with 3D Emerald */}
             <button
-              onClick={() => {
-                if (onSendToAgent) onSendToAgent(activeRoom.id);
-                alert('پیش‌نویس و مدارک اعتبارسنجی با موفقیت به دفتر املاک امین ارسال گردید.');
-              }}
+              onClick={handleSendToAgentClick}
               className="w-full mt-3 btn-3d-emerald text-white font-black py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 cursor-pointer border border-emerald-300/40"
             >
               <Send className="w-4 h-4" />
               <span>ارسال پیش‌نویس به دفتر املاک امین</span>
             </button>
+
+            {showSentSuccess && (
+              <div className="mt-3 p-3 glass-emerald border border-emerald-400/50 rounded-2xl text-xs text-emerald-200 font-bold flex items-center gap-2 animate-in fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>پیش‌نویس و مدارک اعتبارسنجی با موفقیت به کارگزاری املاک امین ارسال گردید.</span>
+              </div>
+            )}
           </div>
 
         </div>

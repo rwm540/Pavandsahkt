@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   mockUsers, 
   mockProperties, 
@@ -11,12 +11,22 @@ import {
   mockNotifications, 
   mockPriceIndices 
 } from './data/mockData';
-import { UserRole, User, Property, DealRoom, NotificationItem } from './types';
+import { UserRole, User, Property, DealRoom, NotificationItem, LiveActivityEvent, LiveTickerItem } from './types';
 import { Header } from './components/common/Header';
 import { BottomNav } from './components/common/BottomNav';
 import { FAB } from './components/common/FAB';
 import { BottomSheetModal } from './components/common/BottomSheetModal';
 import { SubmitModal } from './components/modals/SubmitModal';
+import { LiveTickerBar } from './components/common/LiveTickerBar';
+import { LiveActivityModal } from './components/common/LiveActivityModal';
+import { MoreMenuSheet } from './components/common/MoreMenuSheet';
+import { 
+  initialTickerItems, 
+  initialLiveEvents, 
+  generateNextLiveEvent, 
+  updateTickerItems, 
+  playSubtleChime 
+} from './utils/realtimeEngine';
 
 // Pages
 import { HomeDashboard } from './components/pages/HomeDashboard';
@@ -46,10 +56,118 @@ export default function App() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
+  // Real-Time Engine States
+  const [tickerItems, setTickerItems] = useState<LiveTickerItem[]>(initialTickerItems);
+  const [liveEvents, setLiveEvents] = useState<LiveActivityEvent[]>(initialLiveEvents);
+  const [isLiveActive, setIsLiveActive] = useState<boolean>(true);
+  const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(false);
+  const [isLiveFeedModalOpen, setIsLiveFeedModalOpen] = useState<boolean>(false);
+
   // Modals & Bottom Sheets
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState<boolean>(false);
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState<boolean>(false);
+  const [isMoreMenuSheetOpen, setIsMoreMenuSheetOpen] = useState<boolean>(false);
   const [submitModalType, setSubmitModalType] = useState<'property' | 'material_quote' | 'barter' | 'partnership'>('property');
+
+  // Global Smooth Horizontal Mouse Wheel and Drag-to-Scroll Support
+  useEffect(() => {
+    // 1. Mouse Wheel on Horizontal Scroll Containers
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const scrollable = target.closest('.overflow-x-auto') as HTMLElement | null;
+      if (scrollable && scrollable.scrollWidth > scrollable.clientWidth) {
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          // Translate vertical mouse wheel to horizontal scroll smoothly
+          scrollable.scrollLeft += e.deltaY;
+          e.preventDefault();
+        }
+      }
+    };
+
+    // 2. Mouse Drag-to-Scroll for Desktop users
+    let isDown = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+    let activeContainer: HTMLElement | null = null;
+    let hasDragged = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const container = target.closest('.overflow-x-auto') as HTMLElement | null;
+      if (container && container.scrollWidth > container.clientWidth) {
+        isDown = true;
+        hasDragged = false;
+        activeContainer = container;
+        startX = e.pageX;
+        startScrollLeft = container.scrollLeft;
+      }
+    };
+
+    const handleMouseUp = () => {
+      isDown = false;
+      activeContainer = null;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDown || !activeContainer) return;
+      const dx = e.pageX - startX;
+      if (Math.abs(dx) > 4) {
+        hasDragged = true;
+      }
+      activeContainer.scrollLeft = startScrollLeft - dx;
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  // Real-Time Simulation Interval
+  useEffect(() => {
+    if (!isLiveActive) return;
+
+    const interval = setInterval(() => {
+      // 1. Update fluctuating ticker prices
+      setTickerItems((prev) => updateTickerItems(prev));
+
+      // 2. Generate and prepend next live event
+      const newEvent = generateNextLiveEvent();
+      setLiveEvents((prev) => [newEvent, ...prev.slice(0, 40)]);
+
+      // 3. Play audio chime if enabled
+      if (isSoundEnabled) {
+        playSubtleChime();
+      }
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [isLiveActive, isSoundEnabled]);
+
+  const handleEmitCustomLiveEvent = (title: string, desc: string, type: LiveActivityEvent['type']) => {
+    const timeStr = new Date().toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const customEv: LiveActivityEvent = {
+      id: `custom-${Date.now()}`,
+      title,
+      description: desc,
+      type,
+      timestamp: timeStr,
+      badge: 'رویداد لحظه‌ای',
+      badgeColor: 'amber',
+      actor: currentUser.name,
+    };
+    setLiveEvents((prev) => [customEv, ...prev]);
+    if (isSoundEnabled) playSubtleChime();
+  };
 
   // Filter states inside BottomSheet
   const [selectedCityFilter, setSelectedCityFilter] = useState<string>('all');
@@ -106,7 +224,7 @@ export default function App() {
         confidentialNotes: ['ورود خریدار به اتاق معامله محرمانه ثبت گردید.'],
         steps: [
           { stepNumber: 1, title: 'استعلام اسناد و هویت', description: 'بررسی اصل سند و استعلام الکترونیک ثبت', completed: false, active: true, date: 'امروز' },
-          { stepNumber: 2, title: 'ارزیابی و قیمت‌گذاری کارشناسی', description: 'بازدید کارشناس آکان و تعیین قیمت عادلانه روز', completed: false, active: false },
+          { stepNumber: 2, title: 'ارزیابی و قیمت‌گذاری کارشناسی', description: 'بازدید کارشناس پیوند ساخت و تعیین قیمت عادلانه روز', completed: false, active: false },
           { stepNumber: 3, title: 'تنظیم پیش‌نویس محرمانه', description: 'توافق نحوه پرداخت و شروط طرفین', completed: false, active: false },
           { stepNumber: 4, title: 'ارجاع به املاک امین', description: 'ارسال مدارک به دفتر املاک امین جهت ثبت کد رهگیری', completed: false, active: false },
           { stepNumber: 5, title: 'امضای نهایی و کمیسیون', description: 'امضای مبایعه‌نامه رسمی و تسویه کمیسیون مصوب', completed: false, active: false },
@@ -126,7 +244,7 @@ export default function App() {
   const handleAddProperty = (newPropPartial: Partial<Property>) => {
     const newProp: Property = {
       id: `p-${Date.now()}`,
-      code: `AKN-${Math.floor(1000 + Math.random() * 9000)}`,
+      code: `PYS-${Math.floor(1000 + Math.random() * 9000)}`,
       title: newPropPartial.title || 'فایل ملک اعتبارسنجی‌شده',
       dealType: newPropPartial.dealType || 'sale',
       propertyType: newPropPartial.propertyType || 'apartment',
@@ -185,10 +303,24 @@ export default function App() {
         onOpenFilterSheet={() => setIsFilterSheetOpen(true)}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        onOpenLiveFeed={() => setIsLiveFeedModalOpen(true)}
+        isLiveActive={isLiveActive}
+        onOpenMoreMenu={() => setIsMoreMenuSheetOpen(true)}
+      />
+
+      {/* Real-time Streaming Ticker Bar */}
+      <LiveTickerBar
+        tickerItems={tickerItems}
+        isLiveActive={isLiveActive}
+        onToggleLive={() => setIsLiveActive(!isLiveActive)}
+        isSoundEnabled={isSoundEnabled}
+        onToggleSound={() => setIsSoundEnabled(!isSoundEnabled)}
+        onOpenLiveFeed={() => setIsLiveFeedModalOpen(true)}
+        liveEventsCount={liveEvents.length}
       />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 relative z-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-5 pb-28 md:pb-12 relative z-10">
         
         {/* Render Tab Content */}
         {activeTab === 'home' && (
@@ -200,6 +332,8 @@ export default function App() {
             onNavigateTab={(tab) => setActiveTab(tab)}
             onSelectProperty={handleSelectProperty}
             onEnterDealRoom={handleEnterDealRoom}
+            liveEvents={liveEvents}
+            onOpenLiveFeed={() => setIsLiveFeedModalOpen(true)}
           />
         )}
 
@@ -331,8 +465,30 @@ export default function App() {
       {/* Android Mobile Bottom Navigation Bar */}
       <BottomNav
         activeTab={activeTab}
-        onTabChange={(tab) => setActiveTab(tab)}
+        onTabChange={(tab) => {
+          setIsMoreMenuSheetOpen(false);
+          setActiveTab(tab);
+        }}
         activeDealRoomsCount={activeDealRoomsCount}
+        unreadNotificationsCount={unreadNotificationsCount}
+        onOpenMoreMenu={() => setIsMoreMenuSheetOpen(prev => !prev)}
+        isMoreMenuOpen={isMoreMenuSheetOpen}
+      />
+
+      {/* 3D Animated More Menu Bottom Sheet */}
+      <MoreMenuSheet
+        isOpen={isMoreMenuSheetOpen}
+        onClose={() => setIsMoreMenuSheetOpen(false)}
+        onNavigateTab={(tab) => {
+          setIsMoreMenuSheetOpen(false);
+          setActiveTab(tab);
+        }}
+        onOpenLiveFeed={() => {
+          setIsMoreMenuSheetOpen(false);
+          setIsLiveFeedModalOpen(true);
+        }}
+        activeRole={activeRole}
+        activeTab={activeTab}
         unreadNotificationsCount={unreadNotificationsCount}
       />
 
@@ -387,6 +543,23 @@ export default function App() {
         onClose={() => setIsSubmitModalOpen(false)}
         type={submitModalType}
         onSubmitProperty={handleAddProperty}
+      />
+
+      {/* Real-time Interactive Live Feed Modal */}
+      <LiveActivityModal
+        isOpen={isLiveFeedModalOpen}
+        onClose={() => setIsLiveFeedModalOpen(false)}
+        events={liveEvents}
+        tickerItems={tickerItems}
+        isLiveActive={isLiveActive}
+        onToggleLive={() => setIsLiveActive(!isLiveActive)}
+        isSoundEnabled={isSoundEnabled}
+        onToggleSound={() => setIsSoundEnabled(!isSoundEnabled)}
+        onEmitCustomEvent={handleEmitCustomLiveEvent}
+        onNavigateTab={(tab) => {
+          setIsLiveFeedModalOpen(false);
+          setActiveTab(tab);
+        }}
       />
 
     </div>

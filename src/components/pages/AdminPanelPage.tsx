@@ -43,7 +43,7 @@ export const AdminPanelPage: React.FC<AdminPanelPageProps> = ({
           <div>
             <div className="inline-flex items-center gap-1.5 glass-rose text-rose-200 border border-rose-400/40 px-3.5 py-1 rounded-full text-xs font-black mb-2 shadow-sm">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>پنل ارشد مدیریت و نظارت ثبتی آکان</span>
+              <span>پنل ارشد مدیریت و نظارت ثبتی پیوند ساخت</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-white">مدیریت اعتبارسنجی اسناد، کاربران و کمیسیون</h1>
             <p className="text-xs text-slate-300 font-light mt-1 max-w-xl">

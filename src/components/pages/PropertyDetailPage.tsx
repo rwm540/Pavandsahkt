@@ -120,16 +120,33 @@ export const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
           <h1 className="text-lg sm:text-xl font-black text-white leading-snug">{property.title}</h1>
         </div>
 
-        {/* Price Box with Glass Amber Glow */}
-        <div className="p-4.5 glass-amber border border-amber-400/40 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-100 shadow-sm">
-          <div>
-            <span className="text-xs text-amber-300 block font-medium">قیمت کل کارشناسی شده:</span>
-            <span className="text-xl sm:text-2xl font-black text-white">{formatToman(property.price)}</span>
-          </div>
-          <div className="sm:text-left">
-            <span className="text-xs text-amber-300 block font-medium">قیمت هر متر مربع:</span>
-            <span className="text-sm font-bold text-amber-200">{formatToman(property.pricePerMeter)}</span>
-          </div>
+        {/* Price Box with Glass Amber / Emerald Glow */}
+        <div className={`p-4.5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border ${
+          property.dealType === 'rent' ? 'glass-emerald border-emerald-400/40 text-emerald-100' : 'glass-amber border-amber-400/40 text-amber-100'
+        }`}>
+          {property.dealType === 'rent' && property.rentalDetails ? (
+            <>
+              <div>
+                <span className="text-xs text-emerald-300 block font-medium">مبلغ ودیعه (رهن کارشناسی):</span>
+                <span className="text-xl sm:text-2xl font-black text-white">{formatToman(property.rentalDetails.deposit)}</span>
+              </div>
+              <div className="sm:text-left">
+                <span className="text-xs text-emerald-300 block font-medium">اجاره بهای ماهیانه:</span>
+                <span className="text-lg sm:text-xl font-black text-amber-300">{formatToman(property.rentalDetails.monthlyRent)}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <span className="text-xs text-amber-300 block font-medium">قیمت کل کارشناسی شده:</span>
+                <span className="text-xl sm:text-2xl font-black text-white">{formatToman(property.price)}</span>
+              </div>
+              <div className="sm:text-left">
+                <span className="text-xs text-amber-300 block font-medium">قیمت هر متر مربع:</span>
+                <span className="text-sm font-bold text-amber-200">{formatToman(property.pricePerMeter)}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Key Attributes 3D Grid */}
@@ -158,7 +175,7 @@ export const PropertyDetailPage: React.FC<PropertyDetailPageProps> = ({
         <div className="glass-emerald border border-emerald-400/40 p-5 rounded-3xl space-y-2 text-emerald-100 text-xs shadow-glass-3d">
           <div className="flex items-center gap-2 font-black text-emerald-300 border-b border-emerald-400/30 pb-2">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>گزارش رسمی اعتبارسنجی اسناد (ثبت شده توسط: {property.verifiedBy || 'کارشناس رسمی آکان'})</span>
+            <span>گزارش رسمی اعتبارسنجی اسناد (ثبت شده توسط: {property.verifiedBy || 'کارشناس رسمی پیوند ساخت'})</span>
           </div>
           <p className="leading-relaxed text-emerald-100/90">{property.verificationNotes}</p>
         </div>
