@@ -155,7 +155,7 @@ export const PriceDataCenterPage: React.FC = () => {
           <div>
             <h2 className="font-extrabold text-base text-white flex items-center gap-2">
               <Activity className="w-5 h-5 text-emerald-400 animate-pulse" />
-              <span>روند ۵ ماهه قیمت هر متر (تومان) - {selectedIndex.city} ({selectedIndex.district})</span>
+              <span>روند ۱۲ ماهه قیمت هر متر (تومان) - {selectedIndex.city} ({selectedIndex.district})</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">{selectedIndex.propertyType} • آپدیت زنده آنی</p>
           </div>

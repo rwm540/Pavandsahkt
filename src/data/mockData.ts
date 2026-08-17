@@ -767,6 +767,11 @@ export const mockPriceIndices: PriceIndex[] = [
     change30dPercent: 2.1,
     transactionsCount30d: 142,
     historicalChart: [
+      { month: 'آبان ۴۰۲', price: 142000000 },
+      { month: 'آذر ۴۰۲', price: 145000000 },
+      { month: 'دی ۴۰۲', price: 149000000 },
+      { month: 'بهمن ۴۰۲', price: 153000000 },
+      { month: 'اسفند ۴۰۲', price: 157000000 },
       { month: 'فروردین', price: 168000000 },
       { month: 'اردیبهشت', price: 172000000 },
       { month: 'خرداد', price: 175000000 },
@@ -783,6 +788,11 @@ export const mockPriceIndices: PriceIndex[] = [
     change30dPercent: 1.8,
     transactionsCount30d: 98,
     historicalChart: [
+      { month: 'آبان ۴۰۲', price: 198000000 },
+      { month: 'آذر ۴۰۲', price: 204000000 },
+      { month: 'دی ۴۰۲', price: 210000000 },
+      { month: 'بهمن ۴۰۲', price: 216000000 },
+      { month: 'اسفند ۴۰۲', price: 223000000 },
       { month: 'فروردین', price: 230000000 },
       { month: 'اردیبهشت', price: 235000000 },
       { month: 'خرداد', price: 238000000 },
@@ -799,10 +809,15 @@ export const mockPriceIndices: PriceIndex[] = [
     change30dPercent: 1.2,
     transactionsCount30d: 74,
     historicalChart: [
+      { month: 'آبان ۴۰۲', price: 74000000 },
+      { month: 'آذر ۴۰۲', price: 77000000 },
+      { month: 'دی ۴۰۲', price: 80000000 },
+      { month: 'بهمن ۴۰۲', price: 83000000 },
+      { month: 'اسفند ۴۰۲', price: 85000000 },
       { month: 'فروردین', price: 88000000 },
       { month: 'اردیبهشت', price: 90000000 },
       { month: 'خرداد', price: 92000000 },
-      { month: 'تیر', price: 935000000 },
+      { month: 'تیر', price: 93500000 },
       { month: 'مرداد', price: 95000000 },
     ]
   }
